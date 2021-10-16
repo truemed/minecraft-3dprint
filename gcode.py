@@ -106,42 +106,62 @@ def CommandDecoder(commandParts, extruder:Point, offset: Point, block):
     return endpoint
 
 def SendSetBlock(ext: Point, block):
+    global history
     if (not block):
         block = "minecraft:gold_block"
     if (f"X{ext.x}Y{ext.y}Z{ext.z}" not in history):
         history.append(f"X{ext.x}Y{ext.y}Z{ext.z}")
         SendKeys(f"/setblock ~{ext.x} ~{ext.z} ~{ext.y} {block} replace")
 
-def G1(target: GCommand, extruder: Point, offset: Point):
+def SendFill(ext: Point, target: Point, block):
+    global history
+    if (not block):
+        block = "minecraft:gold_block"
+    if (f"X{ext.x}Y{ext.y}Z{ext.z}" not in history):
+        if (ext.x < target.x):
+            for x in range(ext.x, target.x):
+                history.append(f"X{x}Y{ext.y}Z{ext.z}")
+        elif(ext.x > target.x):
+            for x in range(ext.x, target.x, -1):
+                history.append(f"X{x}Y{ext.y}Z{ext.z}")
+        elif (ext.y < target.y):
+            for y in range(ext.y, target.y):
+                history.append(f"X{ext.x}Y{y}Z{ext.z}")
+        elif(ext.y > target.y):
+            for y in range(ext.y, target.y, -1):
+                history.append(f"X{ext.x}Y{y}Z{ext.z}")
+                 
+        SendKeys(f"/fill ~{ext.x} ~{ext.z} ~{ext.y} ~{target.x} ~{target.z} ~{target.y} {block} replace")
 
+def G1(target: GCommand, extruder: Point, offset: Point):
+   
     ext = Point(extruder.x, extruder.y, extruder.z)
     if (target.ignore == False):
         if (target.extrude == True):
 
             if (target.newx == True and target.newy == False and target.newz == False and abs(extruder.x - target.x) >= 1):
                 # X-only ext
-                if (extruder.x < target.x):
-                    for x in range(extruder.x, target.x):
-                        ext.x = x
-                        # TODO Use SendFill 
-                        SendSetBlock(ext, target.block)
-                else: # extruder.x >= target.x
-                    for x in range(extruder.x, target.x, -1):
-                        ext.x = x
-                        # TODO Use SendFill 
-                        SendSetBlock(ext, target.block)
+                # Use SendFill 
+                SendFill(ext, target, target.block)
+                # if (extruder.x < target.x):
+                #     for x in range(extruder.x, target.x):
+                #         ext.x = x
+                #         SendSetBlock(ext, target.block)
+                # else: # extruder.x >= target.x
+                #     for x in range(extruder.x, target.x, -1):
+                #         ext.x = x
+                #         SendSetBlock(ext, target.block)
             elif (target.newx == False and target.newy == True and target.newz == False and abs(extruder.y - target.y) >= 1):
                 # Y-only ext
-                if (extruder.y < target.y):
-                    for y in range(extruder.y, target.y):
-                        ext.y = y
-                        # TODO Use SendFill 
-                        SendSetBlock(ext, target.block)
-                else: #extruder.y >= target.y
-                    for y in range(extruder.y, target.y, -1):
-                        ext.y = y
-                        # TODO Use SendFill 
-                        SendSetBlock(ext, target.block)
+                SendFill(ext, target, target.block)
+                # if (extruder.y < target.y):
+                #     for y in range(extruder.y, target.y):
+                #         ext.y = y
+                #         SendSetBlock(ext, target.block)
+                # else: #extruder.y >= target.y
+                #     for y in range(extruder.y, target.y, -1):
+                #         ext.y = y
+                #         SendSetBlock(ext, target.block)
             elif (target.newx == True and target.newy == True and target.newz == False):
                 # XY ext
                 deltaY = target.y - extruder.y

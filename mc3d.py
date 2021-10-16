@@ -16,10 +16,12 @@ extruder = Point(0,0,0)
 offset = Point(3,3,0)
 nextEndPoint = GCommand("")
 block = "minecraft:diamond_block"
+if (len(sys.argv) > 2):
+    block = sys.argv[2]
 
 def main():
     global gcodefile
-    print (f"Opening {gcodefile}.. switch to Minecraft.")
+    print (f"Opening {gcodefile}.. switch to Minecraft. Printing material: {block}")
     #A short wait to allow me to switch to minecraft
     time.sleep(3) 
     # open file
