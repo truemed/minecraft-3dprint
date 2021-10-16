@@ -7,7 +7,6 @@
 
 import time
 import sys
-from pywinauto import keyboard
 from gcode import * #Point, GCommand, G28
 
 
