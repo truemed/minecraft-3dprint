@@ -15,6 +15,7 @@ def SendKeys(cmd:str):
     time.sleep(delayT)
     #debug:
     #print (cmd)
+    return
 
 class Point(object):
     def __init__(self, x, y, z):
@@ -36,7 +37,7 @@ class GCommand():
         self.block = block
 
 def CmdExec(target: GCommand, extruder: Point, offset: Point):
-    if (target.code == "G1"):
+    if (target.code == "G1" or target.code == "G0"):
         return G1(target, extruder, offset)
     if (target.code == "G28"):
         return G28(extruder, offset)
@@ -44,7 +45,7 @@ def CmdExec(target: GCommand, extruder: Point, offset: Point):
 
 
 def G28(extruder:Point, offset: Point):
-    print ("G28\n")
+    # print ("G28\n")
     extruder.x = offset.x
     extruder.y = offset.y
     extruder.z = offset.z
@@ -57,8 +58,6 @@ def CommandData(com:str):
         cmdEnd = command.index(';')
         command = command[:cmdEnd]
     commandParts = command.split(' ')
-    # if ';' in commandParts:
-    #     commandParts = commandParts[:commandParts.index(';')]
 
     return commandParts
 
@@ -66,7 +65,8 @@ def CommandData(com:str):
 def CommandDecoder(commandParts, extruder:Point, offset: Point, block):
     
     global validcmds, maxComParam
-    endpoint = GCommand(commandParts[0])
+    endpoint = GCommand(commandParts[0], extruder.x, extruder.y, extruder.z)
+    #print(vars(extruder))
     endpoint.block = block
 
     if (endpoint.code in validcmds):
@@ -75,7 +75,7 @@ def CommandDecoder(commandParts, extruder:Point, offset: Point, block):
             if(commandParts[h] == ""):
                 continue
             else:
-                #and if it has, then converts it to variables
+                
                 if (commandParts[h].startswith("X")):
                     endpoint.x = int(float(commandParts[h][1:])) + offset.x
                     if (abs(endpoint.x - extruder.x) >= 1):
@@ -86,7 +86,7 @@ def CommandDecoder(commandParts, extruder:Point, offset: Point, block):
 
                     if (abs(endpoint.y - extruder.y) >= 1):
                         endpoint.newy = True                        
-                        continue   
+                        continue
                     
                 elif(commandParts[h].startswith("Z")):
                     endpoint.z = int(float(commandParts[h][1:])) + offset.z
@@ -110,12 +110,11 @@ def SendSetBlock(ext: Point, block):
         block = "minecraft:gold_block"
     if (f"X{ext.x}Y{ext.y}Z{ext.z}" not in history):
         history.append(f"X{ext.x}Y{ext.y}Z{ext.z}")
-        SendKeys(f"/setblock ~{ext.x} ~{ext.z} ~{(-1*ext.y)} {block} replace")
+        SendKeys(f"/setblock ~{ext.x} ~{ext.z} ~{ext.y} {block} replace")
 
 def G1(target: GCommand, extruder: Point, offset: Point):
-    
-    ext = Point(extruder.x, extruder.y, extruder.z)
 
+    ext = Point(extruder.x, extruder.y, extruder.z)
     if (target.ignore == False):
         if (target.extrude == True):
 
@@ -124,20 +123,24 @@ def G1(target: GCommand, extruder: Point, offset: Point):
                 if (extruder.x < target.x):
                     for x in range(extruder.x, target.x):
                         ext.x = x
+                        # TODO Use SendFill 
                         SendSetBlock(ext, target.block)
                 else: # extruder.x >= target.x
                     for x in range(extruder.x, target.x, -1):
                         ext.x = x
+                        # TODO Use SendFill 
                         SendSetBlock(ext, target.block)
             elif (target.newx == False and target.newy == True and target.newz == False and abs(extruder.y - target.y) >= 1):
                 # Y-only ext
                 if (extruder.y < target.y):
                     for y in range(extruder.y, target.y):
                         ext.y = y
+                        # TODO Use SendFill 
                         SendSetBlock(ext, target.block)
                 else: #extruder.y >= target.y
                     for y in range(extruder.y, target.y, -1):
                         ext.y = y
+                        # TODO Use SendFill 
                         SendSetBlock(ext, target.block)
             elif (target.newx == True and target.newy == True and target.newz == False):
                 # XY ext
@@ -148,39 +151,33 @@ def G1(target: GCommand, extruder: Point, offset: Point):
                     if (extruder.x < target.x):
                         for i in range(0, deltaX):
                             ext.x = i + extruder.x
-                            ext.y = int(round(m * i)) + extruder.y
+                            ext.y = round(m * i) + extruder.y
                             if (abs(extruder.x - ext.x) >= 1 or abs(extruder.y - ext.y) >= 1):
                                 SendSetBlock(ext, target.block)
                     else: # extruder.x >= target.x
                          for i in range(0, deltaX, -1):
                             ext.x = i + extruder.x
-                            ext.y = int(round(m * i)) + extruder.y
+                            ext.y = round(m * i) + extruder.y
                             if (abs(extruder.x - ext.x) >= 1 or abs(extruder.y - ext.y) >= 1):
                                 SendSetBlock(ext, target.block)
                 else: 
                     if (extruder.y < target.y):
                         for w in range(0, deltaY):
                             ext.y = w + extruder.y
-                            ext.x = int(round(w / m)) + extruder.x
+                            ext.x = round(w / m) + extruder.x
                             if (abs(extruder.x - ext.x) >= 1 or abs(extruder.y - ext.y) >= 1):
                                 SendSetBlock(ext, target.block)
                     else: # extruder.y >= target.y
                         for w in range(0, deltaY, -1):
                             ext.y = w + extruder.y
-                            ext.x = int(round(w / m)) + extruder.x
+                            ext.x = round(w / m) + extruder.x
                             if (abs(extruder.x - ext.x) >= 1 or abs(extruder.y - ext.y) >= 1):
                                 SendSetBlock(ext, target.block)
 
-            extruder.x = ext.x
-            extruder.y = ext.y    
-        else:
-            # Movement
-            if (target.newx):
-                extruder.x = target.x
-            if (target.newy):
-                extruder.y = target.y
-            if (target.newz):
-                extruder.z = target.z
-    
+    # Movement
+    extruder.x = target.x
+    extruder.y = target.y
+    extruder.z = target.z
+  
     # Done
     return extruder

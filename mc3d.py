@@ -11,14 +11,12 @@ from pywinauto import keyboard
 from gcode import * #Point, GCommand, G28
 
 
-
 gcodefile = sys.argv[1]
 
 extruder = Point(0,0,0)
 offset = Point(3,3,0)
 nextEndPoint = GCommand("")
 block = "minecraft:diamond_block"
-
 
 def main():
     global gcodefile
@@ -28,8 +26,6 @@ def main():
     # open file
     n=800 # batch lines at a time
     with open(gcodefile) as f:
-        # for line in f:
-        #     process(line)
         batch=[]
         for line in f:
             batch.append(line)
@@ -37,11 +33,6 @@ def main():
                 process(batch)
                 batch=[]
     process(batch)
-    
-    # size_hint=4096 #4kb
-    # with open(gcodefile) as f:
-    #     while f: # not sure if this check works
-    #         process(f.readlines(size_hint))
 
 def process(data): 
     if (data and len(data) > 0):
